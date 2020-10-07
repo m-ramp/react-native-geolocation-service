@@ -6,6 +6,7 @@ public enum LocationError {
   TIMEOUT(3),
   PLAY_SERVICE_NOT_AVAILABLE(4),
   SETTINGS_NOT_SATISFIED(5),
+  MAX_ATTEMPT_REACHED(6),
   INTERNAL_ERROR(-1);
 
   private int value;

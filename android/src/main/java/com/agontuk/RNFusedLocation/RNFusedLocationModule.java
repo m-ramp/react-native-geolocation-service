@@ -43,6 +43,8 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule {
   private static final float DEFAULT_DISTANCE_FILTER = 100;
   private static final long DEFAULT_INTERVAL = 10 * 1000;  /* 10 secs */
   private static final long DEFAULT_FASTEST_INTERVAL = 5 * 1000; /* 5 sec */
+  private static final double DEFAULT_DESIRED_ACCURACY = Double.POSITIVE_INFINITY;
+  private static final long DEFAULT_MAX_ATTEMPTS = 10;
 
   private boolean mShowLocationDialog = true;
   private boolean mForceRequestLocation = false;
@@ -51,7 +53,9 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule {
   private long mFastestInterval = DEFAULT_FASTEST_INTERVAL;
   private double mMaximumAge = Double.POSITIVE_INFINITY;
   private long mTimeout = Long.MAX_VALUE;
+  private double mDesiredAccuracy = DEFAULT_DESIRED_ACCURACY;
   private float mDistanceFilter = DEFAULT_DISTANCE_FILTER;
+  private long mMaxAttempts = DEFAULT_MAX_ATTEMPTS;
 
   private Callback mSuccessCallback;
   private Callback mErrorCallback;
@@ -171,6 +175,8 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule {
 
     mLocationPriority = getPriority(options);
     mTimeout = options.hasKey("timeout") ? (long) options.getDouble("timeout") : Long.MAX_VALUE;
+    mDesiredAccuracy = options.hasKey("desiredAccuracy") ? options.getDouble("desiredAccuracy") : DEFAULT_DESIRED_ACCURACY;
+    mMaxAttempts = options.hasKey("maxAttempts") ? (long) options.getDouble("maxAttempts") : DEFAULT_MAX_ATTEMPTS;
     mMaximumAge = options.hasKey("maximumAge")
       ? options.getDouble("maximumAge")
       : Double.POSITIVE_INFINITY;
@@ -413,6 +419,8 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule {
             mFusedProviderClient,
             mLocationRequest,
             mTimeout,
+            mDesiredAccuracy,
+            mMaxAttempts,
             mSuccessCallback,
             mErrorCallback
           ).getLocation();

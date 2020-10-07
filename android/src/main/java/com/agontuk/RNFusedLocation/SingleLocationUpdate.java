@@ -19,6 +19,9 @@ public class SingleLocationUpdate {
   private final FusedLocationProviderClient mFusedProviderClient;
   private final LocationRequest mLocationRequest;
   private final long mTimeout;
+  private final double mDesiredAccuracy;
+  private final long mMaxAttempts;
+  private long mAttemptNo;
   private final Callback mSuccessCallback;
   private final Callback mErrorCallback;
 
@@ -43,14 +46,41 @@ public class SingleLocationUpdate {
     @Override
     public void onLocationResult(LocationResult locationResult) {
       synchronized (SingleLocationUpdate.this) {
+        mAttemptNo++;
+
+        if (mAttemptNo > mMaxAttempts) {
+          invokeError(LocationError.MAX_ATTEMPT_REACHED.getValue(), "Location fix cannot be obtained within defined max attempts");
+          mHandler.removeCallbacks(mTimeoutRunnable);
+          // Remove further location update.
+          if (mFusedProviderClient != null && mLocationCallback != null) {
+            mFusedProviderClient.removeLocationUpdates(mLocationCallback);
+          }
+        }
+
         Location location = locationResult.getLastLocation();
-        invokeSuccess(LocationUtils.locationToMap(location));
 
-        mHandler.removeCallbacks(mTimeoutRunnable);
+        if (mDesiredAccuracy > 0) {
+          float accuracy = location.getAccuracy();
+          if (accuracy < mDesiredAccuracy) {
+            invokeSuccess(LocationUtils.locationToMap(location));
+            mHandler.removeCallbacks(mTimeoutRunnable);
 
-        // Remove further location update.
-        if (mFusedProviderClient != null && mLocationCallback != null) {
-          mFusedProviderClient.removeLocationUpdates(mLocationCallback);
+            // Remove further location update.
+            if (mFusedProviderClient != null && mLocationCallback != null) {
+              mFusedProviderClient.removeLocationUpdates(mLocationCallback);
+            }
+
+          }
+        } else {
+
+          invokeSuccess(LocationUtils.locationToMap(location));
+          mHandler.removeCallbacks(mTimeoutRunnable);
+
+          // Remove further location update.
+          if (mFusedProviderClient != null && mLocationCallback != null) {
+            mFusedProviderClient.removeLocationUpdates(mLocationCallback);
+          }
+
         }
       }
     }
@@ -60,12 +90,16 @@ public class SingleLocationUpdate {
     FusedLocationProviderClient fusedLocationProviderClient,
     LocationRequest locationRequest,
     long timeout,
+    double desiredAccuracy,
+    long maxAttempts,
     Callback success,
     Callback error
   ) {
     mFusedProviderClient = fusedLocationProviderClient;
     mLocationRequest = locationRequest;
     mTimeout = timeout;
+    mDesiredAccuracy = desiredAccuracy;
+    mMaxAttempts = maxAttempts;
     mSuccessCallback = success;
     mErrorCallback = error;
   }
